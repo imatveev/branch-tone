@@ -1,0 +1,17 @@
+{
+  "name": "branch-tone",
+  "version": "1.0.0",
+  "description": "Lightweight script to keep your custom git branches up to date with base branch ",
+  "main": "index.js",
+  "dependencies": {
+    "bluebird": "^3.4.6",
+    "node-fetch": "^1.6.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ivan Matvieiev",
+  "license": "MIT"
+}
