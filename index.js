@@ -6,9 +6,12 @@ fetch.Promise = Promise;
 const readline = require('readline');
 
 let login;
-let headers = {};
-let updated = 0;
-let mergeConflicts = 0;
+let headers        = {};
+let updated        = 0;
+let errorsCount    = 0;
+let barnchesCount  = 0;
+let reposCount     = 0;
+const baseUrl = 'https://github.bmc.com/api/v3';
 const rl = readline.createInterface({
     input:  process.stdin,
     output: process.stdout
@@ -49,7 +52,7 @@ question('Username: ')
 })
 .then(password => {
     headers.Authorization = `Basic ${new Buffer(login+':'+password).toString('base64')}`;
-    return fetch('https://api.github.com/user/repos', { headers });
+    return fetch(`${baseUrl}/user/repos`, { headers });
 })
 .then(res => res.json())
 .then(data => {
@@ -57,10 +60,11 @@ question('Username: ')
         process.stderr.write(`\n${data.message}\n`);
         process.exit(1);
     }
+    reposCount = data.length;
     return data;
 })
 .map(repo => {
-    return fetch(`https://api.github.com/repos/${repo.owner.login}/${repo.name}/branches`, { headers })
+    return fetch(`${baseUrl}/repos/${repo.owner.login}/${repo.name}/branches`, { headers })
     .then(res => res.json())
     .then(branches => ({ branches, owner: repo.owner.login, name: repo.name }));
 })
@@ -68,27 +72,32 @@ question('Username: ')
     let baseBranch = repo.branches.find(branch => branch.name === 'development');
     return Promise.all(repo.branches.map(branch => {
         if (/^fixes|feature/.test(branch.name)) {
+            ++barnchesCount;
             return fetch(
-                `https://api.github.com/repos/${repo.owner}/${repo.name}/merges`,
+                `${baseUrl}/repos/${repo.owner}/${repo.name}/merges`,
                 {
                     method: 'POST',
-                    body: JSON.stringify({ base:branch.name, head:baseBranch.name, commit_message: 'Automatically updated' }),
+                    body: JSON.stringify({ base: branch.name, head: baseBranch.name, commit_message: 'Automatically updated' }),
                     headers
                 }
             )
             .then(res => res.json())
             .then(data => {
-                if (data.message === 'Merge conflict') {
-                    ++mergeConflicts;
-                    process.stderr.write(`Merge conflict in ${repo.name} repo: ${branch.name} branch.\n`);
+                if (data.sha) {
+                    ++updated;
                     return;
                 }
-                ++updated;
+                if (data.message) {
+                    ++errorsCount;
+                    process.stderr.write(`${data.message} in ${repo.name} repo: ${branch.name} branch.\n`);
+                    return;
+                }
             });
         }
     }));
 })
 .then(() => {
-    process.stdout.write(`Updated ${updated} branches. Merge conflicts in ${mergeConflicts} branches.\n`);
+    process.stdout.write(`\nUpdated ${updated} branches. Errors in ${errorsCount} branches.\n`);
+    process.stdout.write(`\nTotally checked ${barnchesCount} branches in ${reposCount} repos.\n`);
     rl.close();
 });
