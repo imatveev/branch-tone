@@ -80,16 +80,18 @@ Promise.resolve()
 })
 .map(repo => {
     let baseBranch = repo.branches.find(branch => branch.name === 'development');
-    return Promise.all(repo.branches.map(branch => {
-        if (/^fixes|feature/.test(branch.name)) {
+    return Promise.all(
+        repo.branches
+        .filter(branch => config.branchPattern.test(branch.name))
+        .map(branch => {
             ++barnchesCount;
             return fetch(
                 `${config.gitUrl}/repos/${repo.owner}/${repo.name}/merges`,
                 {
                     method: 'POST',
                     body: JSON.stringify({
-                        base: branch.name,
-                        head: baseBranch.name,
+                        base:           branch.name,
+                        head:           baseBranch.name,
                         commit_message: `Merge branch ${baseBranch.name} into ${branch.name} (automatic update)`
                     }),
                     headers
@@ -107,8 +109,8 @@ Promise.resolve()
                     return;
                 }
             });
-        }
-    }));
+        })
+    );
 })
 .then(() => {
     process.stdout.write(`\nUpdated ${updated} branches. Errors in ${errorsCount} branches.\n`);
