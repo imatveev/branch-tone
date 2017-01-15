@@ -10,6 +10,7 @@ You need to specify four parameters in config.js file:
 * APIToken - API token from github instance (if not set - branch-tone wil prompt for credentials)
 * branchPattern - Regex pattern for custom branches names that needs to be updated
 * baseBranch - name of the base branch
+
 ## Using
     npm i
     npm start
