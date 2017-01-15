@@ -6,6 +6,8 @@ fetch.Promise  = Promise;
 const readline = require('readline');
 const config   = require('./config');
 
+let gitUrl = config.gitUrl || 'https://github.com/api/v3';
+
 let login;
 let headers        = {};
 let updated        = 0;
@@ -62,7 +64,7 @@ Promise.resolve()
 })
 .then(auth => {
     headers.Authorization = auth;
-    return fetch(`${config.gitUrl}/user/repos`, { headers });
+    return fetch(`${gitUrl}/user/repos`, { headers });
 })
 .then(res => res.json())
 .then(data => {
@@ -74,19 +76,19 @@ Promise.resolve()
     return data;
 })
 .map(repo => {
-    return fetch(`${config.gitUrl}/repos/${repo.owner.login}/${repo.name}/branches`, { headers })
+    return fetch(`${gitUrl}/repos/${repo.owner.login}/${repo.name}/branches`, { headers })
     .then(res => res.json())
     .then(branches => ({ branches, owner: repo.owner.login, name: repo.name }));
 })
 .map(repo => {
-    let baseBranch = repo.branches.find(branch => branch.name === 'development');
+    let baseBranch = repo.branches.find(branch => branch.name === config.baseBranch);
     return Promise.all(
         repo.branches
         .filter(branch => config.branchPattern.test(branch.name))
         .map(branch => {
             ++barnchesCount;
             return fetch(
-                `${config.gitUrl}/repos/${repo.owner}/${repo.name}/merges`,
+                `${gitUrl}/repos/${repo.owner}/${repo.name}/merges`,
                 {
                     method: 'POST',
                     body: JSON.stringify({
