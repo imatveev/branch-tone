@@ -1,8 +1,16 @@
 'use strict';
 
 module.exports = {
-    gitUrl:        'https://github.bmc.com/api/v3',
+    gitUrl:        'https://api.github.com',
     APIToken:      '',
-    branchPattern: /BIPAAS/,
-    baseBranch:    'development'
+    branchPattern: /Custom-branch-name-pattern/,
+    baseBranch:    'develoment',
+    notifier: {
+        service: 'gmail',
+        user:    'noreply@gmail.com',
+        pass:    '',
+        from:    '"Name" <email>',
+        to:      [ 'someone@gmail.com' ],
+        subject: 'Report subject'
+    }
 };

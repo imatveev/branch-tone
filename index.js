@@ -1,19 +1,27 @@
 'use strict';
 
-const fetch    = require('node-fetch');
-const Promise  = require('bluebird');
-fetch.Promise  = Promise;
-const readline = require('readline');
-const config   = require('./config');
+const fetch        = require('node-fetch');
+const Promise      = require('bluebird');
+fetch.Promise      = Promise;
+const readline     = require('readline');
+const config       = require('./config');
+const handlebars   = require('handlebars');
+const Notifier     = require('./notifier/notifier');
+const { readFile } = require('./util');
+
+let notifierConfig = config.notifier;
+let notifier = new Notifier(
+    notifierConfig.service,
+    notifierConfig.user,
+    notifierConfig.pass,
+    notifierConfig.from
+);
 
 let gitUrl = config.gitUrl || 'https://github.com/api/v3';
 
 let login;
-let headers        = {};
-let updated        = 0;
-let errorsCount    = 0;
-let barnchesCount  = 0;
-let reposCount     = 0;
+let headers    = { Accept: 'application/vnd.github.loki-preview+json' };
+let reportData = {};
 
 const rl = readline.createInterface({
     input:  process.stdin,
@@ -72,7 +80,6 @@ Promise.resolve()
         process.stderr.write(`\n${data.message}\n`);
         process.exit(1);
     }
-    reposCount = data.length;
     return data;
 })
 .map(repo => {
@@ -80,13 +87,22 @@ Promise.resolve()
     .then(res => res.json())
     .then(branches => ({ branches, owner: repo.owner.login, name: repo.name }));
 })
+.then(repos => {
+    reportData = {};
+    reportData.repos = repos;
+    reportData.reposCount = repos.length;
+    reportData.totallyUpdated = 0;
+    reportData.withErrors = 0;
+    reportData.branchesCount = 0;
+    return repos;
+})
 .map(repo => {
     let baseBranch = repo.branches.find(branch => branch.name === config.baseBranch);
     return Promise.all(
         repo.branches
         .filter(branch => config.branchPattern.test(branch.name))
         .map(branch => {
-            ++barnchesCount;
+            ++reportData.branchesCount;
             return fetch(
                 `${gitUrl}/repos/${repo.owner}/${repo.name}/merges`,
                 {
@@ -102,11 +118,27 @@ Promise.resolve()
             .then(res => res.json())
             .then(data => {
                 if (data.sha) {
-                    ++updated;
+                    reportData.repos = reportData.repos.map(curRepo => {
+                        if (curRepo.name === repo.name) {
+                            curRepo.updatedBranches = curRepo.updatedBranches || [];
+                            curRepo.updatedBranches.push(branch.name);
+                        }
+                        curRepo.toRender = true;
+                        return curRepo;
+                    });
+                    ++reportData.totallyUpdated;
                     return;
                 }
                 if (data.message) {
-                    ++errorsCount;
+                    reportData.repos = reportData.repos.map(curRepo => {
+                        if (curRepo.name === repo.name) {
+                            curRepo.rejectedBranches = curRepo.updatedBranches || [];
+                            curRepo.rejectedBranches.push({ name: branch.name, reason: data.message });
+                            curRepo.toRender = true;
+                        }
+                        return curRepo;
+                    });
+                    ++reportData.withErrors;
                     process.stderr.write(`${data.message} in ${repo.name} repo: ${branch.name} branch.\n`);
                     return;
                 }
@@ -115,7 +147,15 @@ Promise.resolve()
     );
 })
 .then(() => {
-    process.stdout.write(`\nUpdated ${updated} branches. Errors in ${errorsCount} branches.\n`);
-    process.stdout.write(`\nTotally checked ${barnchesCount} branches in ${reposCount} repos.\n`);
+    process.stdout.write(`\nUpdated ${reportData.totallyUpdated} branches. Errors in ${reportData.withErrors} branches.\n`);
+    process.stdout.write(`\nTotally checked ${reportData.branchesCount} branches in ${reportData.reposCount} repos.\n`);
     rl.close();
+    return readFile('./templates/report.html');
+})
+.then(html => {
+    let template = handlebars.compile(html);
+    let rendered = template(reportData);
+    if (reportData.repos.some(repo => repo.toRender) && notifierConfig.to && notifierConfig.to.length) {
+        return notifier.notify(notifierConfig.to, notifierConfig.subject, rendered);
+    }
 });

@@ -1,11 +1,13 @@
 {
   "name": "branch-tone",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Lightweight script to keep your custom git branches up to date with base branch ",
   "main": "index.js",
   "dependencies": {
     "bluebird": "^3.4.6",
-    "node-fetch": "^1.6.3"
+    "handlebars": "^4.0.6",
+    "node-fetch": "^1.6.3",
+    "nodemailer": "^3.0.0"
   },
   "devDependencies": {},
   "scripts": {
