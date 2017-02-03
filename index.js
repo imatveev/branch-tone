@@ -98,6 +98,9 @@ Promise.resolve()
 })
 .map(repo => {
     let baseBranch = repo.branches.find(branch => branch.name === config.baseBranch);
+    if (!baseBranch) {
+        return;
+    }
     return Promise.all(
         repo.branches
         .filter(branch => config.branchPattern.test(branch.name))
@@ -122,8 +125,8 @@ Promise.resolve()
                         if (curRepo.name === repo.name) {
                             curRepo.updatedBranches = curRepo.updatedBranches || [];
                             curRepo.updatedBranches.push(branch.name);
+                            curRepo.toRender = true;
                         }
-                        curRepo.toRender = true;
                         return curRepo;
                     });
                     ++reportData.totallyUpdated;
