@@ -135,7 +135,7 @@ Promise.resolve()
                 if (data.message) {
                     reportData.repos = reportData.repos.map(curRepo => {
                         if (curRepo.name === repo.name) {
-                            curRepo.rejectedBranches = curRepo.updatedBranches || [];
+                            curRepo.rejectedBranches = curRepo.rejectedBranches || [];
                             curRepo.rejectedBranches.push({ name: branch.name, reason: data.message });
                             curRepo.toRender = true;
                         }
