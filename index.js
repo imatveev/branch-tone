@@ -34,7 +34,7 @@ const question = question => {
     });
 };
 
-const hidden = (query) => {
+const hidden = query => {
     return new Promise(resolve => {
         let stdin = process.openStdin();
         process.stdin.on("data", char => {
