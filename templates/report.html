@@ -34,6 +34,16 @@
                             {{/each}}
                         </div>
                     </div>
+                    <h3>Commits since last two hours:</h3>
+                    <div class="repo-commits">
+                    {{#each this.commits}}
+                        <div style="margin:5px;" class="repo-commit">
+                            <img style="float:left;" src="{{this.author.avatar_url}}" width="40" height="40">
+                            <span style="display:block;margin:3px;font-weight:600;">{{this.commit.message}}</span>
+                            <span style="display:block;">SHA: {{this.sha}}</span>
+                        </div>
+                    {{/each}}
+                    </div>
                 </div>
             {{/if}}
         {{/each}}

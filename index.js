@@ -97,6 +97,16 @@ Promise.resolve()
     return repos;
 })
 .map(repo => {
+    return fetch(`${gitUrl}/repos/${repo.owner}/${repo.name}/commits?since=${new Date(Date.now()-7200000).toISOString()}`, { headers })
+    .then(res => res.json())
+    .then(commits => {
+        if (Array.isArray(commits)) {
+            reportData.repos.find(curRepo => curRepo.name === repo.name).commits = commits;
+        }
+        return repo;
+    });
+})
+.map(repo => {
     let baseBranch = repo.branches.find(branch => branch.name === config.baseBranch);
     if (!baseBranch) {
         return;
