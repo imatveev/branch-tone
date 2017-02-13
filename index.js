@@ -97,6 +97,16 @@ Promise.resolve()
     return repos;
 })
 .map(repo => {
+    return fetch(`${gitUrl}/repos/${repo.owner}/${repo.name}/commits`, { headers })
+    .then(res => res.json())
+    .then(commits => {
+        if (Array.isArray(commits) && commits.length) {
+            reportData.repos.find(curRepo => curRepo.name === repo.name).lastCommit = commits[0];
+        }
+        return repo;
+    });
+})
+.map(repo => {
     return fetch(`${gitUrl}/repos/${repo.owner}/${repo.name}/commits?since=${new Date(Date.now()-7200000).toISOString()}`, { headers })
     .then(res => res.json())
     .then(commits => {
@@ -163,7 +173,7 @@ Promise.resolve()
     process.stdout.write(`\nUpdated ${reportData.totallyUpdated} branches. Errors in ${reportData.withErrors} branches.\n`);
     process.stdout.write(`\nTotally checked ${reportData.branchesCount} branches in ${reportData.reposCount} repos.\n`);
     rl.close();
-    return readFile('./templates/report.html');
+    return readFile(`${__dirname}/templates/report.html`);
 })
 .then(html => {
     let template = handlebars.compile(html);

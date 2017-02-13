@@ -32,6 +32,14 @@
                                 <span style="float:right">{{this.reason}}</span>
                                 </div>
                             {{/each}}
+                            {{#if this.rejectedBranches.length}}
+                                <h3>Latest unmerged commit:</h3>
+                                <div style="margin:5px;" class="repo-commit">
+                                    <img style="float:left;" src="{{this.lastCommit.author.avatar_url}}" width="40" height="40">
+                                    <span style="display:block;margin:3px;font-weight:600;">[{{this.lastCommit.commit.author.name}}] {{this.lastCommit.commit.message}}</span>
+                                    <span style="display:block;">SHA: <a href="{{this.lastCommit.html_url}}">{{this.lastCommit.sha}}</a></span>
+                                </div>
+                            {{/if}}
                         </div>
                     </div>
                     {{#if this.commits}}
@@ -40,8 +48,8 @@
                         {{#each this.commits}}
                             <div style="margin:5px;" class="repo-commit">
                                 <img style="float:left;" src="{{this.author.avatar_url}}" width="40" height="40">
-                                <span style="display:block;margin:3px;font-weight:600;">{{this.commit.message}}</span>
-                                <span style="display:block;">SHA: {{this.sha}}</span>
+                                <span style="display:block;margin:3px;font-weight:600;">[{{this.commit.author.name}}] {{this.commit.message}}</span>
+                                <span style="display:block;">SHA: <a href="{{this.html_url}}">{{this.sha}}</a></span>
                             </div>
                         {{/each}}
                         </div>
